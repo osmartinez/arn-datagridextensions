@@ -17,6 +17,8 @@
         FechaDia = 8,
         EntreFechasUnMes = 9,
         EntreFechasMeses = 10,
+        EntreFechasEnteras = 11,
+        EntreFechasDias = 12,
     }
 
     /// <summary>
@@ -28,19 +30,22 @@
         private readonly StringComparison _stringComparison;
 
 
-        private FilterType GetFilterTypeDate(string filter, out int year, out int month, out int day,out int dayUntil, out int mesUntil)
+        private FilterType GetFilterTypeDate(string filter, out int year, out int month, out int day, out int dayUntil, out int monthUntil, out int yearUntil)
         {
             Regex regexFechaEntera = new Regex(@"^(\d\d?)[/\-.](\d\d?)[/\-.](\d\d)$");
             Regex regexFechaDiaMes = new Regex(@"^(\d\d?)[/\-.](\d\d?)$");
             Regex regexFechaDia = new Regex(@"^(\d\d?)$");
+            Regex regexEntreFechasDias = new Regex(@"^(\d\d?)(..|,,)(\d\d?)$");
             Regex regexEntreFechasUnMes = new Regex(@"^(\d\d?)[/\-.](\d\d?)(..|,,)(\d\d?)$");
             Regex regexEntreFechasMeses = new Regex(@"^(\d\d?)[/\-.](\d\d?)(..|,,)(\d\d?)[/\-.](\d\d?)$");
+            Regex regexEntreFechasEnteras = new Regex(@"^(\d\d?)[/\-.](\d\d?)[/\-.](\d\d|\d\d\d\d)(..|,,)(\d\d?)[/\-.](\d\d?)[/\-.](\d\d|\d\d\d\d)$");
 
             year = -1;
             month = -1;
             day = -1;
             dayUntil = -1;
-            mesUntil = -1;
+            monthUntil = -1;
+            yearUntil = -1;
 
             Match mRegexFechaEntera = regexFechaEntera.Match(filter);
             if (mRegexFechaEntera.Success)
@@ -78,15 +83,41 @@
                 return FilterType.EntreFechasUnMes;
             }
 
-            Match mRegexEntreFechasMeses= regexEntreFechasMeses.Match(filter);
+            Match mRegexEntreFechasMeses = regexEntreFechasMeses.Match(filter);
             if (mRegexEntreFechasMeses.Success)
             {
                 day = Convert.ToInt32(mRegexEntreFechasMeses.Groups[1].Value);
                 month = Convert.ToInt32(mRegexEntreFechasMeses.Groups[2].Value);
                 dayUntil = Convert.ToInt32(mRegexEntreFechasMeses.Groups[4].Value);
-                mesUntil = Convert.ToInt32(mRegexEntreFechasMeses.Groups[5].Value);
-
+                monthUntil = Convert.ToInt32(mRegexEntreFechasMeses.Groups[5].Value);
                 return FilterType.EntreFechasMeses;
+            }
+
+            Match mRegexEntreFechasDias = regexEntreFechasDias.Match(filter);
+            if (mRegexEntreFechasDias.Success)
+            {
+                day = Convert.ToInt32(mRegexEntreFechasDias.Groups[1].Value);
+                dayUntil = Convert.ToInt32(mRegexEntreFechasDias.Groups[3].Value);
+                return FilterType.EntreFechasDias;
+            }
+
+            Match mRegexEntreFechasEnteras = regexEntreFechasEnteras.Match(filter);
+            if (mRegexEntreFechasEnteras.Success)
+            {
+                string yearAux = "";
+
+                day = Convert.ToInt32(mRegexEntreFechasEnteras.Groups[1].Value);
+                month = Convert.ToInt32(mRegexEntreFechasEnteras.Groups[2].Value);
+                yearAux = mRegexEntreFechasEnteras.Groups[3].Value;
+                year = yearAux.Length == 2 ? Convert.ToInt32(yearAux ) + 2000 : Convert.ToInt32(yearAux);
+
+                dayUntil = Convert.ToInt32(mRegexEntreFechasEnteras.Groups[5].Value);
+                monthUntil = Convert.ToInt32(mRegexEntreFechasEnteras.Groups[6].Value);
+
+                yearAux = mRegexEntreFechasEnteras.Groups[7].Value;
+                yearUntil = yearAux.Length == 2 ? Convert.ToInt32(yearAux)+2000 : Convert.ToInt32(yearAux);
+
+                return FilterType.EntreFechasEnteras;
             }
 
             day = -1;
@@ -99,9 +130,9 @@
             filter = filter.Trim();
             Regex regexPalabra = new Regex(@"^[a-zA-Z0-9_]+$");
             Regex regexFrase = new Regex(@"([a-zA-Z0-9]+\s)+([a-zA-Z0-9]*)?");
-            Regex regexRangoNumero = new Regex(@"(\d+[,.]?\d+)[.][.](\d+[,.]?\d+)");
-            Regex regexNumeroMenorque = new Regex(@"[<](\d+[,.]?\d+)");
-            Regex regexNumeroMayorque = new Regex(@"[>](\d+[,.]?\d+)");
+            Regex regexRangoNumero = new Regex(@"^(\d+[,.]?\d*)[.][.](\d+[,.]?\d*)$");
+            Regex regexNumeroMenorque = new Regex(@"^[<](\d+[,.]?\d*)$");
+            Regex regexNumeroMayorque = new Regex(@"^[>](\d+[,.]?\d*)$");
 
             if (regexPalabra.Match(filter).Success)
             {
@@ -151,20 +182,24 @@
         /// </returns>
         public bool IsMatch(object? value)
         {
+            
             if (value == null)
                 return false;
 
+            string filtro = _content.Trim();
             bool resultado = false;
 
             DateTime? fecha = value as DateTime?;
-            if(fecha.HasValue)
+            if (fecha.HasValue)
             {
                 int year = -1;
                 int month = -1;
                 int day = -1;
                 int dayUntil = -1;
                 int monthUntil = -1;
-                FilterType tipoFiltro = GetFilterTypeDate(_content, out year, out month, out day, out dayUntil, out monthUntil);
+                int yearUntil = -1;
+
+                FilterType tipoFiltro = GetFilterTypeDate(filtro, out year, out month, out day, out dayUntil, out monthUntil, out yearUntil);
                 DateTime ahora = DateTime.Now;
                 switch (tipoFiltro)
                 {
@@ -188,13 +223,13 @@
                         {
                             DateTime fechaInicio = new DateTime(ahora.Year, month, day);
                             DateTime fechaFin = fechaInicio.Date;
-                            if(day >= dayUntil)
+                            if (day >= dayUntil)
                             {
-                                fechaFin = fechaFin.AddDays(DateTime.DaysInMonth(ahora.Year,month) - (day - dayUntil) );
+                                fechaFin = fechaFin.AddDays(DateTime.DaysInMonth(ahora.Year, month) - (day - dayUntil));
                             }
                             else
                             {
-                                fechaFin = fechaFin.AddDays(dayUntil - day );
+                                fechaFin = fechaFin.AddDays(dayUntil - day);
                             }
                             resultado = fechaInicio <= fecha.Value.Date && fecha.Value.Date <= fechaFin;
                             break;
@@ -202,18 +237,37 @@
                     case FilterType.EntreFechasMeses:
                         {
                             DateTime fechaInicio = new DateTime(ahora.Year, month, day);
-                            DateTime fechaFin = new DateTime(month<=monthUntil? ahora.Year: ahora.Year+1, monthUntil, dayUntil);
+                            DateTime fechaFin = new DateTime(month <= monthUntil ? ahora.Year : ahora.Year + 1, monthUntil, dayUntil);
+                            resultado = fechaInicio <= fecha.Value.Date && fecha.Value.Date <= fechaFin;
+                            break;
+                        }
+                    case FilterType.EntreFechasDias:
+                        {
+                            DateTime fechaInicio = new DateTime(ahora.Year, ahora.Month, day);
+                            DateTime fechaFin = new DateTime(ahora.Year, ahora.Month, dayUntil);
+
+                            if (dayUntil < day)
+                            {
+                                fechaFin = fechaInicio.AddDays(DateTime.DaysInMonth(ahora.Year, ahora.Month) - (day - dayUntil));
+                            }
+                            resultado = fechaInicio <= fecha.Value.Date && fecha.Value.Date <= fechaFin;
+                            break;
+                        }
+                    case FilterType.EntreFechasEnteras:
+                        {
+                            DateTime fechaInicio = new DateTime(year, month, day);
+                            DateTime fechaFin = new DateTime(yearUntil, monthUntil, dayUntil);
+
                             resultado = fechaInicio <= fecha.Value.Date && fecha.Value.Date <= fechaFin;
                             break;
                         }
                     case FilterType.None:
                         break;
-
                 }
             }
             else
             {
-                FilterType tipoFiltro = GetFilterType(_content);
+                FilterType tipoFiltro = GetFilterType(filtro);
                 switch (tipoFiltro)
                 {
                     case FilterType.None:
@@ -335,7 +389,6 @@
                 }
             }
 
-            
             return resultado;
         }
 
