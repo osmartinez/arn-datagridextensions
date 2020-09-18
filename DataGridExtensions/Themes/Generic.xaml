@@ -137,15 +137,31 @@
 
   <!-- Default template for the column header including the filter control. -->
   <DataTemplate x:Key="{x:Static src:DataGridFilter.ColumnHeaderTemplateKey}">
-    <DockPanel Background="Transparent">
-      <!-- The control to host the filter UI for this column -->
+        <!-- The control to host the filter UI for this column -->
+        <!--DockPanel Background="Transparent">
       <src:DataGridFilterColumnControl DockPanel.Dock="Right" />
       <ContentPresenter x:Name="PART_Content" Content="{Binding}"
                         ContentStringFormat="{Binding Column.HeaderStringFormat, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}"
                         SnapsToDevicePixels="{Binding SnapsToDevicePixels, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}"
                         HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}"
                         VerticalAlignment="{Binding VerticalContentAlignment, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}" />
-    </DockPanel>
+    </DockPanel-->
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <src:DataGridFilterColumnControl Grid.Row="1" />
+            <ContentPresenter Grid.Row="0" x:Name="PART_Content" Content="{Binding}"
+                        ContentStringFormat="{Binding Column.HeaderStringFormat, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}"
+                        SnapsToDevicePixels="{Binding SnapsToDevicePixels, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}"
+                        HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}"
+                        VerticalAlignment="{Binding VerticalContentAlignment, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGridColumnHeader}}" />
+
+
+        </Grid>
+    
   </DataTemplate>
 
   <Style TargetType="ToolTip" x:Key="{x:Static behaviors:ExtendedStarSizeBehavior.ColumnHeaderGripperToolTipStyleKey}">
